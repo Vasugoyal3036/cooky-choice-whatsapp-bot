@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ brand_name }} • Brand Owner Admin Dashboard</title>
+    <title>{{ brand_name }} • Operations Console (B2B & B2C)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #008069;
             --primary-dark: #005c4b;
+            --b2c-color: #0284c7;
+            --b2b-color: #d97706;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --border: #e2e8f0;
@@ -40,44 +42,104 @@
         }
 
         .container {
-            max-width: 1280px;
-            margin: 28px auto;
+            max-width: 1320px;
+            margin: 24px auto;
             padding: 0 24px;
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
+        }
+
+        /* Tabs Navigation */
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 2px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid transparent;
+            background: #f1f5f9;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--border);
+            border-bottom: 3px solid var(--primary);
+        }
+        .tab-btn:hover:not(.active) {
+            background: #e2e8f0;
+            color: var(--text-dark);
         }
 
         /* Stat Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
+            gap: 18px;
         }
         .stat-card {
             background: white;
-            padding: 20px;
+            padding: 18px;
             border-radius: 12px;
             border: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
         .stat-icon {
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
+            flex-shrink: 0;
         }
         .stat-icon.green { background: #dcfce7; color: #16a34a; }
         .stat-icon.blue { background: #e0f2fe; color: #0284c7; }
         .stat-icon.amber { background: #fef3c7; color: #d97706; }
         .stat-icon.purple { background: #f3e8ff; color: #9333ea; }
-        .stat-number { font-size: 1.6rem; font-weight: 700; }
-        .stat-label { font-size: 0.85rem; color: var(--text-muted); }
+        .stat-number { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); }
+        .stat-label { font-size: 0.82rem; color: var(--text-muted); }
+
+        /* Flow Highlight Banner */
+        .flow-banner {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .flow-badge {
+            background: #dcfce7;
+            color: #15803d;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
 
         /* Section Cards */
         .section-card {
@@ -85,9 +147,10 @@
             border-radius: 12px;
             border: 1px solid var(--border);
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
         .section-header {
-            padding: 18px 24px;
+            padding: 16px 22px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -95,7 +158,7 @@
             background: #fafafa;
         }
         .section-title {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -105,9 +168,9 @@
 
         /* Table styles */
         .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-        th { background: #f1f5f9; padding: 12px 18px; font-weight: 600; color: #475569; }
-        td { padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+        th { background: #f1f5f9; padding: 12px 16px; font-weight: 600; color: #475569; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
         tr:hover { background: #f8fafc; }
 
         .btn {
@@ -136,45 +199,19 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        .badge-retail { background: #e0f2fe; color: #0369a1; }
-        .badge-wholesale { background: #fef3c7; color: #b45309; }
+        .badge-b2c { background: #e0f2fe; color: #0369a1; }
+        .badge-b2b { background: #fef3c7; color: #b45309; }
         .badge-received { background: #dbeafe; color: #1e40af; }
         .badge-confirmed { background: #fef9c3; color: #854d0e; }
         .badge-dispatched { background: #ffedd5; color: #9a3412; }
         .badge-delivered { background: #dcfce7; color: #15803d; }
 
         .rate-input {
-            width: 100px;
-            padding: 6px 10px;
+            width: 95px;
+            padding: 6px 8px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-weight: 600;
-        }
-
-        .guide-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 10px;
-        }
-        .guide-step {
-            display: flex;
-            gap: 14px;
-            margin-bottom: 14px;
-        }
-        .step-num {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.85rem;
-            flex-shrink: 0;
         }
     </style>
 </head>
@@ -192,7 +229,7 @@
                 <i class="fa-solid fa-file-csv" style="color: #0284c7;"></i> Export Catalog (CSV)
             </a>
             <button class="btn btn-primary" onclick="openAddProductModal()">
-                <i class="fa-solid fa-plus"></i> Add Rice Product
+                <i class="fa-solid fa-plus"></i> Add Rice Variety
             </button>
             <a href="/" class="btn btn-outline" target="_blank">
                 <i class="fa-brands fa-whatsapp" style="color: #25d366;"></i> Open Chat Simulator
@@ -204,47 +241,88 @@
     </nav>
 
     <div class="container">
-        <!-- Stats Row -->
+
+        <!-- Tabs Navigation -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('all', this)">
+                <i class="fa-solid fa-layer-group"></i> All Operations
+            </button>
+            <button class="tab-btn" onclick="switchTab('b2c', this)">
+                <i class="fa-solid fa-basket-shopping" style="color:var(--b2c-color);"></i> B2C Retail Management
+            </button>
+            <button class="tab-btn" onclick="switchTab('b2b', this)">
+                <i class="fa-solid fa-truck-ramp-box" style="color:var(--b2b-color);"></i> B2B Wholesale Management
+            </button>
+            <button class="tab-btn" onclick="switchTab('bot', this)">
+                <i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp Bot Qualification Flow
+            </button>
+        </div>
+
+        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon green"><i class="fa-solid fa-cart-shopping"></i></div>
+                <div class="stat-icon blue"><i class="fa-solid fa-bag-shopping"></i></div>
                 <div>
-                    <div class="stat-number">{{ orders|length }}</div>
-                    <div class="stat-label">Total Inquiries & Orders</div>
+                    <div class="stat-number">{{ stats.b2c_orders_count }}</div>
+                    <div class="stat-label">B2C Retail Orders (₹{{ "{:,.0f}".format(stats.b2c_revenue) }})</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon amber"><i class="fa-solid fa-industry"></i></div>
+                <div class="stat-icon amber"><i class="fa-solid fa-truck-fast"></i></div>
                 <div>
-                    <div class="stat-number">{{ wholesale_rates|length }}</div>
-                    <div class="stat-label">Rice Varieties in Rate Card</div>
+                    <div class="stat-number">{{ stats.b2b_inquiries_count }}</div>
+                    <div class="stat-label">B2B Wholesale Inquiries & Leads</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon blue"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="stat-icon green"><i class="fa-solid fa-wheat-awn"></i></div>
                 <div>
-                    <div class="stat-number">₹0 / month</div>
-                    <div class="stat-label">Meta Platform Cost (Free Tier)</div>
+                    <div class="stat-number">{{ products|length }} Varieties</div>
+                    <div class="stat-label">B2C Retail Consumer SKUs</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon purple"><i class="fa-solid fa-robot"></i></div>
+                <div class="stat-icon purple"><i class="fa-solid fa-tags"></i></div>
                 <div>
-                    <div class="stat-number">Active</div>
-                    <div class="stat-label">Rice Knowledge Engine</div>
+                    <div class="stat-number">{{ wholesale_rates|length }} Commodities</div>
+                    <div class="stat-label">B2B Live Ex-Mill Rate Card</div>
                 </div>
             </div>
         </div>
 
-        <!-- Products Catalog Manager -->
-        <div class="section-card">
+        <!-- WhatsApp Bot Reply Qualification Highlight Banner -->
+        <div class="flow-banner bot-section">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="flow-badge"><i class="fa-solid fa-circle-check"></i> Automated Customer Qualification Active</span>
+                    <span style="font-size:0.85rem; color:#475569; font-weight:600;">Zero-Delay Synchronization</span>
+                </div>
+                <h4 style="font-size:1.05rem; color:#0f172a;">
+                    💬 Every customer is greeted and asked whether they want <b>B2C (Retail)</b> or <b>B2B (Wholesale)</b>!
+                </h4>
+                <p style="font-size:0.85rem; color:#475569; line-height:1.4;">
+                    • <b>B2C Customers:</b> Quoted 1kg, 5kg, 10kg, 26kg retail pack prices, chef cooking tips, and COD delivery.<br>
+                    • <b>B2B Customers:</b> Quoted live ex-mill rates per Quintal/kg, MOQ (10+ Quintals), and bulk consignment freight quotes.
+                </p>
+            </div>
+            <div style="display:flex; gap:10px; flex-shrink:0;">
+                <a href="/" target="_blank" class="btn btn-primary" style="background:#008069;">
+                    <i class="fa-solid fa-play"></i> Test Qualification in Simulator
+                </a>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- B2C SECTION: RETAIL PRODUCTS CATALOG & PACK PRICES       -->
+        <!-- ======================================================== -->
+        <div class="section-card b2c-section">
             <div class="section-header">
-                <div class="section-title">
-                    <i class="fa-solid fa-wheat-awn"></i> Rice Product Catalog & WhatsApp Inventory
+                <div class="section-title" style="color: #0369a1;">
+                    <i class="fa-solid fa-basket-shopping"></i> 🛍️ B2C Retail Product Catalog & Pack Prices
                 </div>
                 <div>
                     <button class="btn btn-primary btn-sm" onclick="openAddProductModal()">
-                        <i class="fa-solid fa-plus"></i> Add New Rice Variety
+                        <i class="fa-solid fa-plus"></i> Add Retail Rice Variety
                     </button>
                 </div>
             </div>
@@ -252,10 +330,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Product Name</th>
+                            <th>Rice Variety Name</th>
                             <th>Category</th>
-                            <th>Pack Variants & Prices</th>
-                            <th>Status</th>
+                            <th>Retail Pack Sizes & Prices (₹)</th>
+                            <th>Status on WhatsApp</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -263,17 +341,17 @@
                         {% for p in products %}
                         <tr>
                             <td>
-                                <b style="font-size: 0.95rem; color: var(--primary-dark);">{{ p.name }}</b><br>
+                                <b style="font-size: 0.95rem; color: #0f172a;">{{ p.name }}</b><br>
                                 <span style="font-size: 0.8rem; color: var(--text-muted);">{{ p.description[:85] }}...</span>
                                 {% if p.cooking_tips %}
                                 <div style="font-size: 0.75rem; color: #0284c7; margin-top: 3px;">
-                                    <i class="fa-solid fa-utensils"></i> {{ p.cooking_tips[:60] }}...
+                                    <i class="fa-solid fa-utensils"></i> {{ p.cooking_tips[:65] }}...
                                 </div>
                                 {% endif %}
                             </td>
-                            <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">{{ p.category }}</span></td>
+                            <td><span class="badge badge-b2c">{{ p.category }}</span></td>
                             <td>
-                                <!-- Quick Inline Price Editor for each pack size -->
+                                <!-- Quick Inline Price Editor for each retail pack size -->
                                 <div style="display:flex; flex-direction:column; gap:6px;">
                                     {% for v in p.variants %}
                                     <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:4px 8px; border-radius:6px;">
@@ -288,7 +366,7 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Live on WhatsApp</span>
+                                <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Live for B2C</span>
                             </td>
                             <td>
                                 <div style="display:flex; gap:6px;">
@@ -307,105 +385,41 @@
             </div>
         </div>
 
-        <!-- Wholesale Rate Card Section -->
-        <div class="section-card">
+        <!-- ======================================================== -->
+        <!-- B2C SECTION: RETAIL CUSTOMER ORDERS                      -->
+        <!-- ======================================================== -->
+        <div class="section-card b2c-section">
             <div class="section-header">
-                <div class="section-title">
-                    <i class="fa-solid fa-tags"></i> Live Wholesale Daily Rate Card Manager
+                <div class="section-title" style="color: #0369a1;">
+                    <i class="fa-solid fa-cart-shopping"></i> 🛍️ B2C Customer Delivery Orders
                 </div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">
-                    <i class="fa-solid fa-info-circle"></i> Rates update immediately for all WhatsApp dealers & buyers
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Wholesale Rate</th>
-                            <th>Unit</th>
-                            <th>Minimum Order Qty (MOQ)</th>
-                            <th>Sortex & Quality Notes</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in wholesale_rates %}
-                        <tr>
-                            <td><b>{{ r.product_name }}</b></td>
-                            <td><span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{ r.category }}</span></td>
-                            <td>
-                                ₹ <input type="number" step="0.5" id="rate_{{ r.product_id }}" class="rate-input" value="{{ r.rate_per_unit }}">
-                            </td>
-                            <td>
-                                <input type="text" id="unit_{{ r.product_id }}" class="rate-input" style="width: 140px;" value="{{ r.unit }}">
-                            </td>
-                            <td>
-                                <input type="text" id="moq_{{ r.product_id }}" class="rate-input" style="width: 150px;" value="{{ r.moq }}">
-                            </td>
-                            <td>
-                                <input type="text" id="note_{{ r.product_id }}" class="rate-input" style="width: 220px;" value="{{ r.note or '' }}">
-                            </td>
-                            <td>
-                                <button class="btn btn-primary btn-sm" onclick="saveRate({{ r.product_id }})">
-                                    <i class="fa-solid fa-floppy-disk"></i> Update
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Orders & Wholesale Leads Monitor -->
-        <div class="section-card">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="fa-solid fa-receipt"></i> Customer Orders & Wholesale Inquiries
-                </div>
-                <span class="badge badge-retail">{{ orders|length }} Records</span>
+                <span class="badge badge-b2c">{{ b2c_orders|length }} B2C Orders</span>
             </div>
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
                             <th>Order Code</th>
-                            <th>Type</th>
                             <th>Date</th>
-                            <th>Customer / Firm</th>
+                            <th>Customer Name</th>
                             <th>Mobile</th>
-                            <th>Details & Items</th>
-                            <th>Amount</th>
-                            <th>Location / Address</th>
+                            <th>Items & Pack Sizes</th>
+                            <th>Total Amount</th>
+                            <th>Delivery Address</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th>WhatsApp</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for o in orders %}
+                        {% for o in b2c_orders %}
                         <tr>
                             <td><code>{{ o.order_code }}</code></td>
-                            <td>
-                                {% if o.order_type == 'RETAIL' %}
-                                <span class="badge badge-retail">Retail B2C</span>
-                                {% elif o.order_type == 'WHOLESALE_INQUIRY' %}
-                                <span class="badge badge-wholesale">Wholesale Lead</span>
-                                {% else %}
-                                <span class="badge" style="background:#f1f5f9;">Callback</span>
-                                {% endif %}
-                            </td>
                             <td style="font-size: 0.8rem; color: var(--text-muted);">{{ o.created_at }}</td>
-                            <td><b>{{ o.customer_name or 'Anonymous' }}</b></td>
+                            <td><b>{{ o.customer_name or 'Consumer' }}</b></td>
                             <td>{{ o.phone_number }}</td>
                             <td style="white-space: pre-line; font-size: 0.85rem; max-width: 320px;">{{ o.summary }}</td>
                             <td>
-                                {% if o.total_amount > 0 %}
                                 <b>₹{{ "{:,.0f}".format(o.total_amount) }}</b>
-                                {% else %}
-                                <span style="color:var(--text-muted); font-size: 0.85rem;">Pending Quote</span>
-                                {% endif %}
                             </td>
                             <td style="font-size: 0.85rem; max-width: 200px;">{{ o.address_or_location }}</td>
                             <td>
@@ -425,8 +439,8 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 30px;">
-                                No orders or inquiries recorded yet. Test placing an order in the <a href="/" target="_blank">Chat Simulator</a>!
+                            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 26px;">
+                                No B2C retail orders placed yet. Test ordering in the <a href="/" target="_blank">Chat Simulator</a>!
                             </td>
                         </tr>
                         {% endfor %}
@@ -435,52 +449,117 @@
             </div>
         </div>
 
-        <!-- Meta WhatsApp Cloud API Setup Guide -->
-        <div class="section-card">
+        <!-- ======================================================== -->
+        <!-- B2B SECTION: WHOLESALE DAILY EX-MILL RATE CARD           -->
+        <!-- ======================================================== -->
+        <div class="section-card b2b-section">
             <div class="section-header">
-                <div class="section-title">
-                    <i class="fa-solid fa-plug"></i> Free Meta WhatsApp Cloud API Integration Guide
+                <div class="section-title" style="color: #b45309;">
+                    <i class="fa-solid fa-truck-ramp-box"></i> 🏭 B2B Live Wholesale Ex-Mill Rate Card Manager
                 </div>
-                <span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;">100% Free • Official Meta Partner</span>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    <i class="fa-solid fa-bolt" style="color:#eab308;"></i> Updates automatically for dealers & bulk buyers on WhatsApp
+                </div>
             </div>
-            <div style="padding: 24px;">
-                <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 16px;">
-                    Follow these 4 simple steps to connect this automation directly to your real WhatsApp Business phone number for <b>₹0 platform cost</b>:
-                </p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Commodity / Variety</th>
+                            <th>Category</th>
+                            <th>Wholesale Rate (₹)</th>
+                            <th>Unit</th>
+                            <th>Minimum Order Qty (MOQ)</th>
+                            <th>Sortex & Quality Specifications</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in wholesale_rates %}
+                        <tr>
+                            <td><b>{{ r.product_name }}</b></td>
+                            <td><span class="badge badge-b2b">{{ r.category }}</span></td>
+                            <td>
+                                ₹ <input type="number" step="0.5" id="rate_{{ r.product_id }}" class="rate-input" value="{{ r.rate_per_unit }}">
+                            </td>
+                            <td>
+                                <input type="text" id="unit_{{ r.product_id }}" class="rate-input" style="width: 130px;" value="{{ r.unit }}">
+                            </td>
+                            <td>
+                                <input type="text" id="moq_{{ r.product_id }}" class="rate-input" style="width: 140px;" value="{{ r.moq }}">
+                            </td>
+                            <td>
+                                <input type="text" id="note_{{ r.product_id }}" class="rate-input" style="width: 220px;" value="{{ r.note or '' }}">
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" style="background:#d97706;" onclick="saveRate({{ r.product_id }})">
+                                    <i class="fa-solid fa-floppy-disk"></i> Update
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <div class="guide-box">
-                    <div class="guide-step">
-                        <div class="step-num">1</div>
-                        <div>
-                            <b>Create a Free Meta Developer Account:</b><br>
-                            Go to <a href="https://developers.facebook.com" target="_blank" style="color:var(--primary); font-weight:600;">developers.facebook.com</a>, log in with your Facebook account, click <b>My Apps</b> &gt; <b>Create App</b> &gt; Select <b>Other</b> &gt; <b>Business</b>.
-                        </div>
-                    </div>
-                    <div class="guide-step">
-                        <div class="step-num">2</div>
-                        <div>
-                            <b>Add WhatsApp to your App:</b><br>
-                            In your app dashboard, click <b>Set up</b> on the <b>WhatsApp</b> card. Meta instantly gives you a free Test Phone Number, Temporary Access Token, and Phone Number ID!
-                        </div>
-                    </div>
-                    <div class="guide-step">
-                        <div class="step-num">3</div>
-                        <div>
-                            <b>Configure Webhook URL:</b><br>
-                            Under WhatsApp &gt; <b>Configuration</b> &gt; <b>Webhook</b>:<br>
-                            • <b>Callback URL:</b> <code>https://&lt;your-server-or-ngrok&gt;/webhook</code><br>
-                            • <b>Verify Token:</b> <code>cooky_choice_webhook_secret_2026</code><br>
-                            Click <i>Verify and Save</i>, then click <b>Manage</b> on Webhook Fields and check <code>messages</code>.
-                        </div>
-                    </div>
-                    <div class="guide-step">
-                        <div class="step-num">4</div>
-                        <div>
-                            <b>Paste credentials in <code>.env</code>:</b><br>
-                            Copy your <code>Phone Number ID</code> and <code>Permanent Access Token</code> from Meta and paste them into your project's <code>.env</code> file. That's it! Every customer message will be answered automatically 24/7!
-                        </div>
-                    </div>
+        <!-- ======================================================== -->
+        <!-- B2B SECTION: WHOLESALE LEADS & INQUIRIES                 -->
+        <!-- ======================================================== -->
+        <div class="section-card b2b-section">
+            <div class="section-header">
+                <div class="section-title" style="color: #b45309;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> 🏭 B2B Commercial Inquiries & Bulk Quotation Tickets
                 </div>
+                <span class="badge badge-b2b">{{ b2b_inquiries|length }} Wholesale Leads</span>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ticket Code</th>
+                            <th>Date</th>
+                            <th>Firm & Contact Person</th>
+                            <th>Mobile</th>
+                            <th>Variety, Volume & Tonnage</th>
+                            <th>Destination City</th>
+                            <th>Status</th>
+                            <th>WhatsApp Deal Desk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in b2b_inquiries %}
+                        <tr>
+                            <td><code>{{ o.order_code }}</code></td>
+                            <td style="font-size: 0.8rem; color: var(--text-muted);">{{ o.created_at }}</td>
+                            <td><b>{{ o.customer_name or 'Trade Buyer' }}</b></td>
+                            <td>{{ o.phone_number }}</td>
+                            <td style="white-space: pre-line; font-size: 0.85rem; max-width: 320px;">{{ o.summary }}</td>
+                            <td style="font-size: 0.85rem;"><b>{{ o.address_or_location }}</b></td>
+                            <td>
+                                <select onchange="changeOrderStatus({{ o.id }}, this.value)" style="padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                    <option value="RECEIVED" {% if o.status == 'RECEIVED' %}selected{% endif %}>📥 New Lead</option>
+                                    <option value="CONFIRMED" {% if o.status == 'CONFIRMED' %}selected{% endif %}>📋 Quoted</option>
+                                    <option value="DISPATCHED" {% if o.status == 'DISPATCHED' %}selected{% endif %}>🚛 Transport Booked</option>
+                                    <option value="DELIVERED" {% if o.status == 'DELIVERED' %}selected{% endif %}>✅ Deal Closed</option>
+                                    <option value="CANCELLED" {% if o.status == 'CANCELLED' %}selected{% endif %}>❌ Follow-up Later</option>
+                                </select>
+                            </td>
+                            <td>
+                                <a href="https://wa.me/{{ o.phone_number|replace('+', '')|replace(' ', '') }}" target="_blank" class="btn btn-outline btn-sm" style="color:#b45309; border-color:#fcd34d;" title="Send Freight Quotation on WhatsApp">
+                                    <i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> Send Quote
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 26px;">
+                                No B2B wholesale inquiries yet. In the simulator, type <b>"2"</b> or <b>"Wholesale"</b> to test!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -537,7 +616,7 @@
 
                 <div style="margin-bottom:16px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <label style="font-size:0.85rem; font-weight:600;">Pack Sizes & Retail Prices:</label>
+                        <label style="font-size:0.85rem; font-weight:600;">Retail Pack Sizes & Prices:</label>
                         <button type="button" class="btn btn-outline btn-sm" onclick="addEditVariantRow()"><i class="fa-solid fa-plus"></i> Add Pack Size</button>
                     </div>
                     <div id="edit_variants_container" style="display:flex; flex-direction:column; gap:8px;">
@@ -595,7 +674,7 @@
                 </div>
 
                 <div style="margin-bottom:16px;">
-                    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:6px;">Pack Variants & Retail Prices:</label>
+                    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:6px;">Retail Pack Sizes & Prices:</label>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                         <div>
                             <span style="font-size:0.75rem; color:#64748b;">Pack 1 (e.g. 5 kg Bag):</span>
@@ -619,6 +698,33 @@
     </div>
 
     <script>
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const b2cSections = document.querySelectorAll('.b2c-section');
+            const b2bSections = document.querySelectorAll('.b2b-section');
+            const botSections = document.querySelectorAll('.bot-section');
+
+            if (tabId === 'all') {
+                b2cSections.forEach(el => el.style.display = 'block');
+                b2bSections.forEach(el => el.style.display = 'block');
+                botSections.forEach(el => el.style.display = 'flex');
+            } else if (tabId === 'b2c') {
+                b2cSections.forEach(el => el.style.display = 'block');
+                b2bSections.forEach(el => el.style.display = 'none');
+                botSections.forEach(el => el.style.display = 'none');
+            } else if (tabId === 'b2b') {
+                b2cSections.forEach(el => el.style.display = 'none');
+                b2bSections.forEach(el => el.style.display = 'block');
+                botSections.forEach(el => el.style.display = 'none');
+            } else if (tabId === 'bot') {
+                b2cSections.forEach(el => el.style.display = 'none');
+                b2bSections.forEach(el => el.style.display = 'none');
+                botSections.forEach(el => el.style.display = 'flex');
+            }
+        }
+
         function showToast(msg) {
             const toast = document.getElementById('toastNotification');
             const toastMsg = document.getElementById('toastMessage');
@@ -817,6 +923,7 @@
                 alert("Error deleting product.");
             }
         }
+
         async function saveRate(productId) {
             const rate = parseFloat(document.getElementById(`rate_${productId}`).value);
             const unit = document.getElementById(`unit_${productId}`).value.trim();
@@ -858,7 +965,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    // updated
+                    showToast("✅ Order status updated!");
                 }
             } catch (err) {
                 alert("Error updating order status.");

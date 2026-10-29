@@ -52,12 +52,19 @@ def init_db():
     CREATE TABLE IF NOT EXISTS sessions (
         phone_number TEXT PRIMARY KEY,
         customer_name TEXT,
-        current_state TEXT DEFAULT 'MAIN_MENU',
+        customer_type TEXT DEFAULT '',
+        current_state TEXT DEFAULT 'ASK_B2B_B2C',
         cart TEXT DEFAULT '[]',
         temp_data TEXT DEFAULT '{}',
         last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
+    # Ensure customer_type column exists for existing databases
+    try:
+        cursor.execute("ALTER TABLE sessions ADD COLUMN customer_type TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS orders (
@@ -167,6 +174,7 @@ def get_or_create_session(phone_number: str, customer_name: Optional[str] = None
         session = dict(row)
         session["cart"] = json.loads(session["cart"] or "[]")
         session["temp_data"] = json.loads(session["temp_data"] or "{}")
+        session["customer_type"] = session.get("customer_type") or ""
         if customer_name and not session.get("customer_name"):
             cursor.execute("UPDATE sessions SET customer_name = ?, last_active = ? WHERE phone_number = ?", 
                            (customer_name, now_str, phone_number))
@@ -176,21 +184,23 @@ def get_or_create_session(phone_number: str, customer_name: Optional[str] = None
         session = {
             "phone_number": phone_number,
             "customer_name": customer_name or "",
-            "current_state": "MAIN_MENU",
+            "customer_type": "",
+            "current_state": "ASK_B2B_B2C",
             "cart": [],
             "temp_data": {},
             "last_active": now_str
         }
         cursor.execute("""
-            INSERT INTO sessions (phone_number, customer_name, current_state, cart, temp_data, last_active)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (phone_number, customer_name or "", "MAIN_MENU", "[]", "{}", now_str))
+            INSERT INTO sessions (phone_number, customer_name, customer_type, current_state, cart, temp_data, last_active)
+            VALUES (?, ?, '', 'ASK_B2B_B2C', '[]', '{}', ?)
+        """, (phone_number, customer_name or "", now_str))
         conn.commit()
     conn.close()
     return session
 
 def update_session(phone_number: str, state: Optional[str] = None, cart: Optional[list] = None, 
-                   temp_data: Optional[dict] = None, customer_name: Optional[str] = None):
+                   temp_data: Optional[dict] = None, customer_name: Optional[str] = None,
+                   customer_type: Optional[str] = None):
     conn = get_connection()
     cursor = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -209,6 +219,9 @@ def update_session(phone_number: str, state: Optional[str] = None, cart: Optiona
     if customer_name is not None:
         updates.append("customer_name = ?")
         params.append(customer_name)
+    if customer_type is not None:
+        updates.append("customer_type = ?")
+        params.append(customer_type)
 
     params.append(phone_number)
     cursor.execute(f"UPDATE sessions SET {', '.join(updates)} WHERE phone_number = ?", params)
@@ -221,7 +234,7 @@ def reset_session(phone_number: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute("""
         UPDATE sessions 
-        SET current_state = 'MAIN_MENU', cart = '[]', temp_data = '{}', last_active = ?
+        SET current_state = 'ASK_B2B_B2C', customer_type = '', cart = '[]', temp_data = '{}', last_active = ?
         WHERE phone_number = ?
     """, (now_str, phone_number))
     conn.commit()
@@ -250,6 +263,46 @@ def get_all_orders(limit: int = 100) -> List[Dict[str, Any]]:
     rows = [dict(r) for r in cursor.fetchall()]
     conn.close()
     return rows
+
+def get_b2c_orders(limit: int = 100) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM orders WHERE order_type IN ('RETAIL', 'B2C') ORDER BY id DESC LIMIT ?", (limit,))
+    rows = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return rows
+
+def get_b2b_inquiries(limit: int = 100) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM orders WHERE order_type IN ('WHOLESALE_INQUIRY', 'B2B', 'WHOLESALE', 'CALL_REQUEST') ORDER BY id DESC LIMIT ?", (limit,))
+    rows = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return rows
+
+def get_dashboard_stats() -> Dict[str, Any]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*), COALESCE(SUM(total_amount), 0) FROM orders WHERE order_type IN ('RETAIL', 'B2C')")
+    b2c_cnt, b2c_rev = cursor.fetchone()
+    
+    cursor.execute("SELECT COUNT(*) FROM orders WHERE order_type IN ('WHOLESALE_INQUIRY', 'B2B', 'WHOLESALE', 'CALL_REQUEST')")
+    b2b_cnt = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM products WHERE is_active = 1")
+    prod_cnt = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM wholesale_rates")
+    rate_cnt = cursor.fetchone()[0]
+
+    conn.close()
+    return {
+        "b2c_orders_count": b2c_cnt,
+        "b2c_revenue": b2c_rev,
+        "b2b_inquiries_count": b2b_cnt,
+        "products_count": prod_cnt,
+        "rates_count": rate_cnt
+    }
 
 def update_order_status(order_id: int, status: str):
     conn = get_connection()

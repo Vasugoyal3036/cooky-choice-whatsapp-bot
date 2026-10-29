@@ -32,6 +32,9 @@ from database import (
     get_wholesale_rates,
     update_wholesale_rate,
     get_all_orders,
+    get_b2c_orders,
+    get_b2b_inquiries,
+    get_dashboard_stats,
     update_order_status,
     reset_session,
     add_product,
@@ -125,17 +128,23 @@ async def simulator_view(request: Request):
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_view(request: Request):
     """
-    Brand Owner Operations Console: Daily Wholesale Rates & Orders.
+    Brand Owner Operations Console: B2B Wholesale vs B2C Retail Management.
     """
     wholesale_rates = get_wholesale_rates()
-    orders = get_all_orders(limit=100)
+    all_orders = get_all_orders(limit=100)
+    b2c_orders = get_b2c_orders(limit=100)
+    b2b_inquiries = get_b2b_inquiries(limit=100)
     products = get_active_products()
+    stats = get_dashboard_stats()
 
     context = {
         "brand_name": BRAND_NAME,
         "wholesale_rates": wholesale_rates,
-        "orders": orders,
-        "products": products
+        "orders": all_orders,
+        "b2c_orders": b2c_orders,
+        "b2b_inquiries": b2b_inquiries,
+        "products": products,
+        "stats": stats
     }
     return templates.TemplateResponse(request=request, name="admin.html", context=context)
 
