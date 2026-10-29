@@ -1,0 +1,13 @@
+node_modules/
+whatsapp_bridge/node_modules/
+whatsapp_bridge/auth_info_baileys/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+qr_status.json
+whatsapp_bridge/qr_status.json
+*.zip
+.system_generated/

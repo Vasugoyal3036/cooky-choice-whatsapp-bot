@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pair WhatsApp Device • {{ brand_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #008069;
+            --primary-dark: #005c4b;
+            --wa-green: #25d366;
+            --bg: #efeae2;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text-dark: #111b21;
+            --text-muted: #667781;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: #f0f2f5; color: var(--text-dark); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .navbar {
+            background: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-brand { font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-left: 16px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            flex: 1;
+        }
+
+        .pair-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        @media (max-width: 768px) {
+            .pair-card { flex-direction: column; }
+        }
+
+        .instructions-side {
+            flex: 1;
+            padding: 40px;
+            background: #fafafa;
+            border-right: 1px solid var(--border);
+        }
+        .instructions-title {
+            font-size: 1.35rem;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .instructions-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+        .step-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .step-text { font-size: 0.92rem; line-height: 1.45; color: #334155; }
+        .step-text b { color: var(--text-dark); }
+
+        .qr-side {
+            width: 380px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: white;
+        }
+
+        .qr-box {
+            width: 260px;
+            height: 260px;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .qr-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .badge-loading { background: #fef3c7; color: #92400e; }
+        .badge-ready { background: #dbeafe; color: #1e40af; }
+        .badge-connected { background: #dcfce7; color: #15803d; }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+        .btn-danger:hover { background: #fecaca; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fa-solid fa-wheat-awn"></i> {{ brand_name }}
+        </div>
+        <div class="nav-links">
+            <a href="/admin"><i class="fa-solid fa-sliders"></i> Admin Console</a>
+            <a href="/"><i class="fa-brands fa-whatsapp"></i> Chat Simulator</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="pair-card">
+            
+            <!-- Left: Step-by-Step Instructions -->
+            <div class="instructions-side">
+                <div class="instructions-title">
+                    <i class="fa-brands fa-whatsapp" style="color: var(--wa-green);"></i> Link WhatsApp to Cooky Choice Bot
+                </div>
+                <div class="instructions-subtitle">
+                    Pair your physical phone just like WhatsApp Web. Once paired, your phone will automatically reply to customer inquiries 24/7!
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        Open <b>WhatsApp</b> or <b>WhatsApp Business</b> on your mobile phone.
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        Tap <b>Menu (⋮)</b> on Android or <b>Settings (⚙️)</b> on iPhone.
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        Tap <b>Linked Devices</b> and then tap <b>Link a Device</b>.
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-text">
+                        Point your camera at the QR code on the right to scan and connect!
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; padding: 14px; background: #e0f2fe; border-radius: 8px; font-size: 0.85rem; color: #0369a1;">
+                    <i class="fa-solid fa-lightbulb"></i> <b>Zero Meta Tokens Needed:</b> This uses official WhatsApp Web multi-device pairing. It does not disconnect your existing mobile app.
+                </div>
+            </div>
+
+            <!-- Right: Dynamic QR Code Container -->
+            <div class="qr-side">
+                <div id="qrContainer" class="qr-box">
+                    <div id="qrLoading" style="color: var(--text-muted); font-size: 0.9rem;">
+                        <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color: var(--primary); margin-bottom: 12px; display: block;"></i>
+                        Generating QR Code...
+                    </div>
+                    <img id="qrImage" style="display:none;" alt="Scan WhatsApp QR">
+                </div>
+
+                <div id="statusBadge" class="status-badge badge-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Initializing Bridge...
+                </div>
+
+                <div id="connectedDetails" style="display:none; margin-top: 14px;">
+                    <p style="font-size: 0.9rem; font-weight: 700; color: #15803d; margin-bottom: 6px;">
+                        <i class="fa-solid fa-circle-check"></i> Active & Auto-Replying!
+                    </p>
+                    <p id="connectedPhone" style="font-size: 0.82rem; color: #475569; margin-bottom: 14px;"></p>
+                    <button class="btn btn-danger btn-sm" onclick="disconnectDevice()">
+                        <i class="fa-solid fa-link-slash"></i> Unlink Phone
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let pollTimer = null;
+
+        async function checkStatus() {
+            try {
+                const res = await fetch('/api/device/status');
+                const data = await res.json();
+
+                const qrContainer = document.getElementById('qrContainer');
+                const qrLoading = document.getElementById('qrLoading');
+                const qrImage = document.getElementById('qrImage');
+                const badge = document.getElementById('statusBadge');
+                const connectedDetails = document.getElementById('connectedDetails');
+                const connectedPhone = document.getElementById('connectedPhone');
+
+                if (data.status === 'QR_READY' && data.qrImage) {
+                    qrLoading.style.display = 'none';
+                    qrImage.style.display = 'block';
+                    qrImage.src = data.qrImage;
+
+                    badge.className = 'status-badge badge-ready';
+                    badge.innerHTML = '<i class="fa-solid fa-qrcode"></i> Ready! Scan with WhatsApp';
+                    connectedDetails.style.display = 'none';
+                } else if (data.status === 'CONNECTED') {
+                    qrLoading.style.display = 'none';
+                    qrImage.style.display = 'none';
+                    qrContainer.innerHTML = '<i class="fa-solid fa-mobile-screen-button fa-4x" style="color:#22c55e;"></i>';
+
+                    badge.className = 'status-badge badge-connected';
+                    badge.innerHTML = '<i class="fa-solid fa-check"></i> Phone Connected';
+
+                    connectedPhone.innerText = `Connected: +${data.phone} (${data.name || 'Cooky Choice'})`;
+                    connectedDetails.style.display = 'block';
+                } else if (data.status === 'STARTING') {
+                    badge.className = 'status-badge badge-loading';
+                    badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing WhatsApp...';
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }
+
+        async function disconnectDevice() {
+            if (!confirm("Are you sure you want to unlink this WhatsApp phone?")) return;
+            await fetch('/api/device/disconnect', { method: 'POST' });
+            location.reload();
+        }
+
+        // Poll every 1.5 seconds
+        pollTimer = setInterval(checkStatus, 1500);
+        checkStatus();
+    </script>
+</body>
+</html>

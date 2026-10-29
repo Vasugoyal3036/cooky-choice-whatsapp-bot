@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+env/
+whatsapp_bridge/node_modules
+whatsapp_bridge/auth_info_baileys
+.git
+.gitignore

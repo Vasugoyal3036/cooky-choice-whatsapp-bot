@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ brand_name }} • WhatsApp Automation Simulator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --wa-teal: #008069;
+            --wa-teal-dark: #005c4b;
+            --wa-light: #efeae2;
+            --wa-incoming: #ffffff;
+            --wa-outgoing: #d9fdd3;
+            --wa-border: #e9edef;
+            --wa-text: #111b21;
+            --wa-muted: #667781;
+            --wa-accent: #25d366;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Left Side: Brand & Control Panel */
+        .sidebar {
+            width: 360px;
+            background: #ffffff;
+            border-right: 1px solid var(--wa-border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            background: var(--wa-teal);
+            color: white;
+            padding: 20px;
+        }
+        .sidebar-header h2 { font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+        .sidebar-header p { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+        .sidebar-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--wa-teal-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sim-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--wa-teal); color: white; width: 100%; }
+        .btn-primary:hover { background: var(--wa-teal-dark); }
+        .btn-outline { background: white; border: 1px solid #cbd5e1; color: var(--wa-text); }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+        .btn-danger:hover { background: #fecaca; }
+
+        .quick-action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .quick-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s;
+        }
+        .quick-btn:hover { background: #e2f4ea; border-color: var(--wa-accent); }
+
+        /* Right Side: WhatsApp Chat Canvas */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--wa-light);
+            position: relative;
+        }
+        .chat-container::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(#d3c6b8 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .chat-header {
+            background: #ffffff;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--wa-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        .brand-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #e2f4ea;
+            color: var(--wa-teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            border: 2px solid var(--wa-accent);
+        }
+        .brand-info h1 { font-size: 1rem; color: var(--wa-text); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .brand-info h1 span.verified { color: #00a884; font-size: 0.9rem; }
+        .brand-info p { font-size: 0.78rem; color: var(--wa-muted); }
+
+        .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1;
+        }
+
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            position: relative;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            word-wrap: break-word;
+            white-space: pre-line;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+        }
+        .chat-bubble.incoming {
+            background: var(--wa-incoming);
+            align-self: flex-start;
+            border-top-left-radius: 2px;
+        }
+        .chat-bubble.outgoing {
+            background: var(--wa-outgoing);
+            align-self: flex-end;
+            border-top-right-radius: 2px;
+        }
+        .chat-time {
+            font-size: 0.68rem;
+            color: var(--wa-muted);
+            float: right;
+            margin-left: 12px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .chat-footer {
+            background: #f0f2f5;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+        .chat-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .chat-input {
+            width: 100%;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 24px;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: var(--wa-teal); }
+        .btn-send {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--wa-teal);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+        }
+        .btn-send:hover { background: var(--wa-teal-dark); }
+        
+        .badge-free {
+            background: #dcfce7;
+            color: #15803d;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Controls & Simulation Panel -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fa-solid fa-wheat-awn"></i> {{ brand_name }}</h2>
+            <p>{{ brand_tagline }}</p>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Simulator Identity -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-user-circle"></i> Test Customer Profile</div>
+                <label style="font-size: 0.8rem; color: #475569; display:block; margin-bottom:4px;">Phone Number:</label>
+                <input type="text" id="simPhone" class="sim-input" value="+919811122233">
+                <label style="font-size: 0.8rem; color: #475569; display:block; margin-bottom:4px;">Customer / Firm Name:</label>
+                <input type="text" id="simName" class="sim-input" value="Ramesh Kumar">
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" style="flex:1;" onclick="applyProfile()">Set Profile</button>
+                    <button class="btn btn-danger" style="flex:1;" onclick="resetTestSession()"><i class="fa-solid fa-rotate-left"></i> Reset Chat</button>
+                </div>
+            </div>
+
+            <!-- One-Click Scenario Buttons -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-bolt"></i> One-Click Scenarios</div>
+                <div class="quick-action-btns">
+                    <button class="quick-btn" onclick="sendQuickMessage('Hi')">
+                        <i class="fa-solid fa-hand"></i> Greeting / Menu
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickMessage('1')">
+                        <i class="fa-solid fa-store"></i> Browse Catalog
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickMessage('2')">
+                        <i class="fa-solid fa-industry"></i> Wholesale Rates
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickMessage('Which rice is best for Biryani?')">
+                        <i class="fa-solid fa-bowl-rice"></i> Biryani Advice
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickMessage('Do you have rice for diabetes?')">
+                        <i class="fa-solid fa-heart-pulse"></i> Diabetes / Diet
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickMessage('Show catalog')">
+                        <i class="fa-solid fa-store"></i> Show Prices
+                    </button>
+                </div>
+            </div>
+
+            <!-- Free Setup & Navigation -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fa-solid fa-shield-halved"></i> 100% Free WhatsApp
+                    <span class="badge-free">Meta $0 Free Tier</span>
+                </div>
+                <p style="font-size: 0.8rem; color: #475569; line-height: 1.4; margin-bottom: 12px;">
+                    Meta provides <b>1,000 free service chats/month</b>. No third-party platform subscription needed.
+                </p>
+                <a href="/admin" class="btn btn-primary" style="margin-bottom: 8px;">
+                    <i class="fa-solid fa-sliders"></i> Open Brand Owner Admin
+                </a>
+                <a href="/pair" class="btn btn-outline" style="width: 100%; border-color: #22c55e; color: #166534;" target="_blank">
+                    <i class="fa-solid fa-qrcode"></i> Pair Real Phone (QR Code)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Chat Screen -->
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="brand-meta">
+                <div class="brand-avatar"><i class="fa-solid fa-seedling"></i></div>
+                <div class="brand-info">
+                    <h1>{{ brand_name }} <span class="verified" title="Official WhatsApp Business"><i class="fa-solid fa-circle-check"></i></span></h1>
+                    <p><i class="fa-solid fa-circle" style="color: #22c55e; font-size: 0.6rem;"></i> Official WhatsApp Automation • Online</p>
+                </div>
+            </div>
+            <div>
+                <a href="/admin" class="btn btn-outline" style="font-size: 0.8rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Admin Panel
+                </a>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-body" id="chatBody">
+            <!-- Initial automated welcome message -->
+            <div class="chat-bubble incoming">
+                🌾 *Welcome to {{ brand_name }}* 🌾
+                _{{ brand_tagline }}_
+
+                Namaste! How can we serve you today?
+
+                1️⃣ 🛍️ *Browse Rice Catalog & Prices* (Packs: 1kg, 5kg, 10kg, 26kg)
+                2️⃣ 🏭 *Live Wholesale Rate Card & Bulk Quotes* (Dealers & Wholesalers)
+                3️⃣ 🤖 *Ask Rice Advisor / Cooking Guide* (AI Assistant)
+                4️⃣ 📞 *Mill Location & Contact Sales Head*
+
+                👉 *Reply with a number (1-4)* or tap **'View Catalog' / 🛍️ icon** at the top of this chat!
+                <span class="chat-time">Just now</span>
+            </div>
+        </div>
+
+        <!-- Chat Input Footer -->
+        <div class="chat-footer">
+            <div class="chat-input-wrapper">
+                <input type="text" id="userInput" class="chat-input" placeholder="Type a message or option number (e.g., 1, 2, Biryani advice)..." onkeydown="handleKey(event)">
+            </div>
+            <button class="btn-send" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        function getTimeString() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12 || 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
+        function appendMessage(text, isOutgoing = false) {
+            const chatBody = document.getElementById('chatBody');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${isOutgoing ? 'outgoing' : 'incoming'}`;
+
+            // Format markdown *bold*, _italic_, `code`
+            let formatted = text
+                .replace(/\*(.*?)\*/g, '<b>$1</b>')
+                .replace(/_(.*?)_/g, '<i>$1</i>')
+                .replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px;">$1</code>');
+
+            bubble.innerHTML = `${formatted}<span class="chat-time">${getTimeString()} ${isOutgoing ? '<i class="fa-solid fa-check-double" style="color:#53bdeb;margin-left:3px;"></i>' : ''}</span>`;
+            chatBody.appendChild(bubble);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        async function sendUserMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.value = '';
+            appendMessage(message, true);
+
+            const phone = document.getElementById('simPhone').value.trim();
+            const name = document.getElementById('simName').value.trim();
+
+            try {
+                const response = await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone_number: phone,
+                        message_text: message,
+                        sender_name: name
+                    })
+                });
+                const data = await response.json();
+                if (data.reply) {
+                    setTimeout(() => appendMessage(data.reply, false), 300);
+                }
+            } catch (err) {
+                appendMessage("⚠️ Connection error. Please ensure the backend server is running.", false);
+            }
+        }
+
+        function handleKey(e) {
+            if (e.key === 'Enter') sendUserMessage();
+        }
+
+        function sendQuickMessage(text) {
+            document.getElementById('userInput').value = text;
+            sendUserMessage();
+        }
+
+        function applyProfile() {
+            const name = document.getElementById('simName').value.trim();
+            appendMessage(`Profile updated: ${name}`, false);
+        }
+
+        async function resetTestSession() {
+            const phone = document.getElementById('simPhone').value.trim();
+            await fetch('/api/reset-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone_number: phone })
+            });
+            document.getElementById('chatBody').innerHTML = '';
+            sendQuickMessage('Hi');
+        }
+    </script>
+</body>
+</html>

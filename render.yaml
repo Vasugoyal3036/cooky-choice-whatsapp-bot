@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: cooky-choice-whatsapp-bot
+    env: docker
+    plan: free
+    region: oregon
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: BRAND_NAME
+        value: Cooky Choice Rice
+      - key: BRAND_PHONE
+        value: "+91 98765 43210"
+      - key: BRAND_EMAIL
+        value: support@cookychoice.com
