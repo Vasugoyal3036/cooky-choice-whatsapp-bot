@@ -37,7 +37,10 @@ from database import (
     add_product,
     delete_product,
     toggle_product_status,
-    generate_meta_catalog_csv
+    generate_meta_catalog_csv,
+    update_product_full,
+    update_variant_price,
+    get_product_full
 )
 from bot_engine import handle_incoming_message
 from meta_api import verify_meta_webhook, parse_incoming_webhook_payload, send_whatsapp_message
@@ -89,6 +92,10 @@ class WholesaleItem(BaseModel):
     rate: float
     unit: str
     note: Optional[str] = ""
+
+class UpdateVariantPriceRequest(BaseModel):
+    variant_id: int
+    retail_price: float
 
 class CreateProductRequest(BaseModel):
     name: str
@@ -232,6 +239,33 @@ async def create_product_endpoint(req: CreateProductRequest):
 async def delete_product_endpoint(product_id: int):
     delete_product(product_id)
     return {"success": True, "message": "Product removed from catalog"}
+
+@app.get("/api/admin/products/{product_id}")
+async def get_product_endpoint(product_id: int):
+    prod = get_product_full(product_id)
+    if not prod:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return prod
+
+@app.post("/api/admin/products/{product_id}/edit")
+async def edit_product_endpoint(product_id: int, req: CreateProductRequest):
+    variants_dict = [{"pack_size": v.pack_size, "retail_price": v.retail_price} for v in req.variants]
+    wholesale_dict = req.wholesale.model_dump() if req.wholesale else None
+    update_product_full(
+        product_id=product_id,
+        name=req.name,
+        category=req.category,
+        description=req.description,
+        cooking_tips=req.cooking_tips or "",
+        variants=variants_dict,
+        wholesale=wholesale_dict
+    )
+    return {"success": True, "message": "Product and prices updated successfully!"}
+
+@app.post("/api/admin/variants/price")
+async def update_variant_price_endpoint(req: UpdateVariantPriceRequest):
+    update_variant_price(req.variant_id, req.retail_price)
+    return {"success": True, "message": "Pack price updated instantly!"}
 
 @app.post("/api/admin/products/{product_id}/toggle")
 async def toggle_product_endpoint(product_id: int):

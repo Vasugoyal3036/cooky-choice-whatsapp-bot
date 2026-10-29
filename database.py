@@ -316,6 +316,87 @@ def toggle_product_status(product_id: int) -> int:
     conn.close()
     return new_status
 
+def update_variant_price(variant_id: int, new_price: float) -> bool:
+    """
+    Instantly updates the retail price of a specific pack size.
+    Immediately changes what WhatsApp bot quotes to customers!
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE variants SET retail_price = ? WHERE id = ?", (new_price, variant_id))
+    conn.commit()
+    conn.close()
+    return True
+
+def get_product_full(product_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Returns complete product information including variants and wholesale rate for editing.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return None
+    p = dict(row)
+    cursor.execute("SELECT * FROM variants WHERE product_id = ? ORDER BY id ASC", (product_id,))
+    p["variants"] = [dict(v) for v in cursor.fetchall()]
+
+    cursor.execute("SELECT * FROM wholesale_rates WHERE product_id = ?", (product_id,))
+    w = cursor.fetchone()
+    p["wholesale"] = dict(w) if w else None
+    conn.close()
+    return p
+
+def update_product_full(product_id: int, name: str, category: str, description: str, 
+                        cooking_tips: str, variants: List[Dict[str, Any]], 
+                        wholesale: Optional[Dict[str, Any]] = None):
+    """
+    Updates all fields of an existing rice variety, its pack sizes, and wholesale pricing.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE products 
+        SET name = ?, category = ?, description = ?, cooking_tips = ?
+        WHERE id = ?
+    """, (name, category, description, cooking_tips, product_id))
+
+    # Update or insert variants
+    cursor.execute("DELETE FROM variants WHERE product_id = ?", (product_id,))
+    for v in variants:
+        pack_size = v.get("pack_size", "1 kg")
+        price = float(v.get("retail_price", 0.0))
+        cursor.execute("""
+            INSERT INTO variants (product_id, pack_size, retail_price, in_stock)
+            VALUES (?, ?, ?, 1)
+        """, (product_id, pack_size, price))
+
+    # Update wholesale
+    if wholesale:
+        moq = wholesale.get("moq", "10 Bags")
+        rate = float(wholesale.get("rate", 0.0))
+        unit = wholesale.get("unit", "per Bag")
+        note = wholesale.get("note", "")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute("SELECT id FROM wholesale_rates WHERE product_id = ?", (product_id,))
+        if cursor.fetchone():
+            cursor.execute("""
+                UPDATE wholesale_rates 
+                SET moq = ?, rate_per_unit = ?, unit = ?, note = ?, updated_at = ?
+                WHERE product_id = ?
+            """, (moq, rate, unit, note, now_str, product_id))
+        else:
+            cursor.execute("""
+                INSERT INTO wholesale_rates (product_id, moq, rate_per_unit, unit, note, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (product_id, moq, rate, unit, note, now_str))
+
+    conn.commit()
+    conn.close()
+
 def generate_meta_catalog_csv() -> str:
     """
     Generates Meta / WhatsApp Commerce Manager compliant CSV.

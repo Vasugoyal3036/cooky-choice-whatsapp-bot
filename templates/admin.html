@@ -263,26 +263,42 @@
                         {% for p in products %}
                         <tr>
                             <td>
-                                <b>{{ p.name }}</b><br>
-                                <span style="font-size: 0.8rem; color: var(--text-muted);">{{ p.description[:70] }}...</span>
+                                <b style="font-size: 0.95rem; color: var(--primary-dark);">{{ p.name }}</b><br>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">{{ p.description[:85] }}...</span>
+                                {% if p.cooking_tips %}
+                                <div style="font-size: 0.75rem; color: #0284c7; margin-top: 3px;">
+                                    <i class="fa-solid fa-utensils"></i> {{ p.cooking_tips[:60] }}...
+                                </div>
+                                {% endif %}
                             </td>
                             <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">{{ p.category }}</span></td>
                             <td>
-                                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                <!-- Quick Inline Price Editor for each pack size -->
+                                <div style="display:flex; flex-direction:column; gap:6px;">
                                     {% for v in p.variants %}
-                                    <span style="font-size: 0.8rem; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 8px; border-radius:6px;">
-                                        <b>{{ v.pack_size }}:</b> ₹{{ "{:,.0f}".format(v.retail_price) }}
-                                    </span>
+                                    <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:4px 8px; border-radius:6px;">
+                                        <span style="font-size:0.8rem; font-weight:600; min-width:85px; color:#334155;">{{ v.pack_size }}:</span>
+                                        <span style="font-size:0.8rem; color:#64748b;">₹</span>
+                                        <input type="number" step="1" id="v_price_{{ v.id }}" value="{{ v.retail_price|int }}" style="width:75px; padding:3px 6px; border:1px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:0.85rem;">
+                                        <button class="btn btn-primary btn-sm" style="padding:2px 8px; font-size:0.75rem;" onclick="saveVariantPrice({{ v.id }}, '{{ p.name }}', '{{ v.pack_size }}')">
+                                            <i class="fa-solid fa-check"></i> Save
+                                        </button>
+                                    </div>
                                     {% endfor %}
                                 </div>
                             </td>
                             <td>
-                                <span class="badge" style="background:#dcfce7; color:#15803d;">Active on WhatsApp</span>
+                                <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Live on WhatsApp</span>
                             </td>
                             <td>
-                                <button class="btn btn-outline btn-sm" style="color:#dc2626;" onclick="deleteProduct({{ p.id }})">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:#cbd5e1;" onclick="openEditProductModal({{ p.id }})" title="Edit Details">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </button>
+                                    <button class="btn btn-outline btn-sm" style="color:#dc2626; border-color:#fca5a5;" onclick="deleteProduct({{ p.id }})" title="Delete Product">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -470,6 +486,73 @@
 
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toastNotification" style="display:none; position:fixed; bottom:24px; right:24px; background:#0f172a; color:white; padding:14px 22px; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.25); z-index:99999; font-size:0.9rem; align-items:center; gap:12px; border-left:5px solid #22c55e;">
+        <i class="fa-solid fa-circle-check" style="color:#22c55e; font-size:1.2rem;"></i>
+        <span id="toastMessage">Changes saved!</span>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editProductModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; width:90%; max-width:600px; padding:24px; max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size:1.15rem; color:var(--primary);"><i class="fa-solid fa-pen-to-square"></i> Edit Rice Variety & Prices</h3>
+                <button onclick="closeEditProductModal()" style="border:none; background:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <form onsubmit="submitEditProduct(event)">
+                <input type="hidden" id="edit_prod_id">
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Rice Variety Name:</label>
+                    <input type="text" id="edit_name" required style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Category:</label>
+                        <select id="edit_category" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+                            <option value="Basmati Special">Basmati Special</option>
+                            <option value="Daily South Indian">Daily South Indian</option>
+                            <option value="Daily Fragrant">Daily Fragrant</option>
+                            <option value="Health & Fitness">Health & Fitness</option>
+                            <option value="Economy & Broken">Economy & Broken</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Wholesale Rate (₹):</label>
+                        <input type="number" step="0.5" id="edit_whl_rate" required style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Description:</label>
+                    <textarea id="edit_desc" required rows="2" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;"></textarea>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Cooking Advice / Chef Tip:</label>
+                    <input type="text" id="edit_tips" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label style="font-size:0.85rem; font-weight:600;">Pack Sizes & Retail Prices:</label>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addEditVariantRow()"><i class="fa-solid fa-plus"></i> Add Pack Size</button>
+                    </div>
+                    <div id="edit_variants_container" style="display:flex; flex-direction:column; gap:8px;">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                    <button type="button" class="btn btn-outline" onclick="closeEditProductModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save & Update WhatsApp Bot</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Add Product Modal -->
     <div id="addProductModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:white; border-radius:12px; width:90%; max-width:550px; padding:24px; max-height:90vh; overflow-y:auto;">
@@ -536,6 +619,135 @@
     </div>
 
     <script>
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.innerText = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 4000);
+        }
+
+        async function saveVariantPrice(variantId, prodName, packSize) {
+            const input = document.getElementById(`v_price_${variantId}`);
+            const price = parseFloat(input.value);
+            if (isNaN(price) || price < 0) {
+                alert("Please enter a valid price.");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/variants/price', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ variant_id: variantId, retail_price: price })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ ${prodName} (${packSize}) updated to ₹${price}! WhatsApp bot replies edited.`);
+                }
+            } catch (err) {
+                alert("Error updating price. Check server connection.");
+            }
+        }
+
+        async function openEditProductModal(productId) {
+            try {
+                const res = await fetch(`/api/admin/products/${productId}`);
+                const p = await res.json();
+
+                document.getElementById('edit_prod_id').value = p.id;
+                document.getElementById('edit_name').value = p.name;
+                document.getElementById('edit_category').value = p.category;
+                document.getElementById('edit_desc').value = p.description;
+                document.getElementById('edit_tips').value = p.cooking_tips || '';
+                document.getElementById('edit_whl_rate').value = p.wholesale ? p.wholesale.rate_per_unit : 0;
+
+                const container = document.getElementById('edit_variants_container');
+                container.innerHTML = '';
+                if (p.variants && p.variants.length > 0) {
+                    p.variants.forEach(v => addEditVariantRow(v.pack_size, v.retail_price));
+                } else {
+                    addEditVariantRow('5 kg Bag', 500);
+                }
+
+                document.getElementById('editProductModal').style.display = 'flex';
+            } catch (err) {
+                alert("Could not load product details.");
+            }
+        }
+
+        function closeEditProductModal() {
+            document.getElementById('editProductModal').style.display = 'none';
+        }
+
+        function addEditVariantRow(size = '', price = '') {
+            const container = document.getElementById('edit_variants_container');
+            const row = document.createElement('div');
+            row.className = 'edit-variant-row';
+            row.style.cssText = 'display:flex; gap:8px; align-items:center;';
+            row.innerHTML = `
+                <input type="text" class="edit-v-size" value="${size}" placeholder="e.g. 5 kg Bag" style="flex:1; padding:6px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.85rem;">
+                <span style="font-size:0.85rem; color:#64748b;">₹</span>
+                <input type="number" class="edit-v-price" value="${price}" placeholder="Price" style="width:100px; padding:6px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.85rem; font-weight:700;">
+                <button type="button" class="btn btn-outline btn-sm" style="color:#dc2626;" onclick="this.parentElement.remove()" title="Remove variant"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        async function submitEditProduct(e) {
+            e.preventDefault();
+            const prodId = document.getElementById('edit_prod_id').value;
+            const name = document.getElementById('edit_name').value.trim();
+            const category = document.getElementById('edit_category').value;
+            const desc = document.getElementById('edit_desc').value.trim();
+            const tips = document.getElementById('edit_tips').value.trim();
+            const whlRate = parseFloat(document.getElementById('edit_whl_rate').value) || 0;
+
+            const variants = [];
+            const rows = document.querySelectorAll('#edit_variants_container .edit-variant-row');
+            rows.forEach(r => {
+                const s = r.querySelector('.edit-v-size').value.trim();
+                const p = parseFloat(r.querySelector('.edit-v-price').value);
+                if (s && p > 0) variants.push({ pack_size: s, retail_price: p });
+            });
+
+            if (variants.length === 0) {
+                alert("Please add at least one valid pack size and price.");
+                return;
+            }
+
+            const payload = {
+                name: name,
+                category: category,
+                description: desc,
+                cooking_tips: tips,
+                variants: variants,
+                wholesale: {
+                    moq: "10 Quintals",
+                    rate: whlRate,
+                    unit: "per kg (ex-mill)",
+                    note: "Updated ex-mill rate"
+                }
+            };
+
+            try {
+                const res = await fetch(`/api/admin/products/${prodId}/edit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ "${name}" updated! WhatsApp automated replies now use this immediately.`);
+                    setTimeout(() => location.reload(), 1200);
+                }
+            } catch (err) {
+                alert("Error saving edits.");
+            }
+        }
+
         function openAddProductModal() {
             document.getElementById('addProductModal').style.display = 'flex';
         }
@@ -587,8 +799,8 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("Rice product added to WhatsApp Catalog successfully!");
-                    location.reload();
+                    showToast("✅ Product added to WhatsApp Catalog successfully!");
+                    setTimeout(() => location.reload(), 1200);
                 }
             } catch (err) {
                 alert("Error adding product.");
@@ -630,7 +842,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("Wholesale rate updated successfully!");
+                    showToast("✅ Wholesale rate updated! WhatsApp bot replies are updated immediately.");
                 }
             } catch (err) {
                 alert("Failed to update rate. Check server connection.");
